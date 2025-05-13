@@ -301,7 +301,7 @@ function renderCalendar() {
         dayHeader.style.gridRow = '1';
         dayHeader.style.gridColumn = (d + 2);
         const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-        dayHeader.innerHTML = `<div>${days[d]}</div><div style='font-size:13px;font-weight:normal;'>${weekDates[d].getDate()} ${monthNames[weekDates[d].getMonth()]}</div>`;
+        dayHeader.innerHTML = `<div class='calendar-day-title'>${days[d]}</div><div class='calendar-day-date'>${weekDates[d].getDate()} ${monthNames[weekDates[d].getMonth()]}</div>`;
         dayHeader.style.fontWeight = 'bold';
         dayHeader.style.textAlign = 'center';
         calendarGrid.appendChild(dayHeader);
@@ -331,6 +331,10 @@ function renderCalendar() {
             for (let d = 0; d < 7; d++) {
                 const cell = document.createElement('div');
                 cell.className = 'calendar-cell';
+                // Добавляем класс для ячеек целых часов
+                if (m === 0) {
+                    cell.classList.add('hour-line');
+                }
                 cell.style.gridRow = rowIndex;
                 cell.style.gridColumn = (d + 2);
                 cell.ondragover = e => e.preventDefault();

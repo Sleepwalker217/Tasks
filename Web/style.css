@@ -156,6 +156,7 @@ body {
     display: grid;
     grid-template-columns: 60px repeat(7, 1fr);
     grid-auto-rows: 20px;
+    grid-template-rows: 48px repeat(100, 20px);
     gap: 1px;
     background: #222;
     position: relative;
@@ -174,7 +175,15 @@ body {
     border-right: 1px solid #333;
     position: relative;
     box-sizing: border-box;
+    padding-top: 4px;
+    padding-bottom: 4px;
 }
+
+/* Стиль для ячеек целых часов */
+.calendar-cell.hour-line {
+    border-top: 2px solid #444;
+}
+
 .task-block {
     display: flex;
     align-items: center;
@@ -193,8 +202,10 @@ body {
     font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
     text-align: center;
+    word-break: break-all;
+    line-height: 1.2;
 }
 .task-block .resize-handle {
     position: absolute;
@@ -388,4 +399,16 @@ body {
     border-radius: 50%;
     cursor: pointer;
     border: 2px solid var(--accent);
+}
+.calendar-day-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 2px;
+    line-height: 1.1;
+}
+.calendar-day-date {
+    font-size: 13px;
+    font-weight: normal;
+    color: #b0b0b0;
+    line-height: 1.1;
 } 
