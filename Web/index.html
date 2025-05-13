@@ -20,7 +20,14 @@
                 <button id="next-week-btn">▶</button>
                 <button id="theme-toggle">🌙</button>
             </header>
-            <div id="calendar-grid"></div>
+            <div class="calendar-container">
+                <div class="zoom-controls">
+                    <button id="zoom-out">-</button>
+                    <input type="range" id="zoom-slider" min="50" max="200" value="100" step="10">
+                    <button id="zoom-in">+</button>
+                </div>
+                <div id="calendar-grid"></div>
+            </div>
         </main>
     </div>
     <div id="modal" class="modal hidden">

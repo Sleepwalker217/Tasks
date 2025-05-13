@@ -5,6 +5,7 @@ let editingTaskId = null;
 let draggedTaskId = null;
 let theme = localStorage.getItem('theme') || 'dark';
 let currentWeekOffset = 0; // Добавляем смещение текущей недели
+let calendarScale = parseFloat(localStorage.getItem('calendarScale')) || 1;
 
 // --- DOM элементы ---
 const taskList = document.getElementById('task-list');
@@ -19,6 +20,9 @@ const currentDateSpan = document.getElementById('current-date');
 const themeToggle = document.getElementById('theme-toggle');
 const prevWeekBtn = document.getElementById('prev-week-btn');
 const nextWeekBtn = document.getElementById('next-week-btn');
+const zoomInBtn = document.getElementById('zoom-in');
+const zoomOutBtn = document.getElementById('zoom-out');
+const zoomSlider = document.getElementById('zoom-slider');
 
 // --- Инициализация ---
 window.onload = () => {
@@ -27,7 +31,52 @@ window.onload = () => {
     updateCurrentDate();
     applyTheme();
     setupWeekNavigation();
+    setupZoomControls();
+    applyCalendarScale();
 };
+
+// --- Масштабирование календаря ---
+function setupZoomControls() {
+    // Устанавливаем начальное значение слайдера
+    zoomSlider.value = calendarScale * 100;
+    
+    zoomInBtn.onclick = () => {
+        calendarScale = Math.min(2, calendarScale + 0.1);
+        zoomSlider.value = calendarScale * 100;
+        applyCalendarScale();
+    };
+    
+    zoomOutBtn.onclick = () => {
+        calendarScale = Math.max(0.5, calendarScale - 0.1);
+        zoomSlider.value = calendarScale * 100;
+        applyCalendarScale();
+    };
+
+    zoomSlider.oninput = () => {
+        calendarScale = zoomSlider.value / 100;
+        applyCalendarScale();
+    };
+}
+
+function applyCalendarScale() {
+    const container = document.querySelector('.calendar-container');
+    const grid = document.getElementById('calendar-grid');
+    
+    // Сохраняем текущую позицию прокрутки
+    const scrollLeft = container.scrollLeft;
+    const scrollTop = container.scrollTop;
+    
+    // Применяем масштаб
+    grid.style.transform = `scale(${calendarScale})`;
+    grid.style.width = `${100 / calendarScale}%`;
+    grid.style.height = `${100 / calendarScale}%`;
+    
+    // Восстанавливаем позицию прокрутки
+    container.scrollLeft = scrollLeft;
+    container.scrollTop = scrollTop;
+    
+    localStorage.setItem('calendarScale', calendarScale.toString());
+}
 
 // --- События ---
 addTaskBtn.onclick = () => openModal();
@@ -37,21 +86,57 @@ themeToggle.onclick = toggleTheme;
 taskInput.onkeydown = e => { if (e.key === 'Enter') saveTask(); };
 
 // --- Навигация по неделям ---
+function updateAddButtonVisibility() {
+    const weekDates = getWeekDates();
+    const today = new Date();
+    const isCurrentWeek = weekDates.some(date => 
+        date.getDate() === today.getDate() && 
+        date.getMonth() === today.getMonth() && 
+        date.getFullYear() === today.getFullYear()
+    );
+    
+    addTaskBtn.style.display = isCurrentWeek ? 'flex' : 'none';
+}
+
+function updateSidebarTitle() {
+    const title = document.querySelector('.sidebar h2');
+    title.textContent = 'Задачи на неделю';
+}
+
 function setupWeekNavigation() {
     prevWeekBtn.onclick = () => {
         currentWeekOffset--;
         renderCalendar();
+        renderTasks();
+        updateSidebarTitle();
+        updateAddButtonVisibility();
     };
     nextWeekBtn.onclick = () => {
         currentWeekOffset++;
         renderCalendar();
+        renderTasks();
+        updateSidebarTitle();
+        updateAddButtonVisibility();
     };
+    updateSidebarTitle();
+    updateAddButtonVisibility();
 }
 
 // --- Функции задач ---
 function renderTasks() {
     taskList.innerHTML = '';
-    tasks.forEach((task, idx) => {
+    const weekDates = getWeekDates();
+    const weekStart = weekDates[0];
+    const weekEnd = new Date(weekDates[6]);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    // Фильтруем задачи только для текущей недели
+    const weekTasks = calendarTasks.filter(task => {
+        const taskDate = new Date(task.date);
+        return taskDate >= weekStart && taskDate <= weekEnd;
+    });
+
+    weekTasks.forEach((task, idx) => {
         const li = document.createElement('li');
         li.textContent = task.text;
         li.draggable = true;
@@ -94,6 +179,26 @@ function saveTask() {
     } else {
         const newTask = { id: Date.now(), text };
         tasks.push(newTask);
+        // Добавляем задачу в calendarTasks с текущей датой
+        const weekDates = getWeekDates();
+        const today = new Date();
+        const currentDay = weekDates.findIndex(date => 
+            date.getDate() === today.getDate() && 
+            date.getMonth() === today.getMonth() && 
+            date.getFullYear() === today.getFullYear()
+        );
+        
+        if (currentDay !== -1) {
+            calendarTasks.push({
+                id: newTask.id,
+                text: newTask.text,
+                date: today.toISOString(),
+                hour: new Date().getHours(),
+                duration: 1
+            });
+            localStorage.setItem('calendarTasks', JSON.stringify(calendarTasks));
+            renderCalendar();
+        }
     }
     localStorage.setItem('tasks', JSON.stringify(tasks));
     renderTasks();
@@ -110,14 +215,17 @@ function deleteTask(id) {
 }
 
 // --- Календарь ---
-const days = ['Вск', 'Пнд', 'Втр', 'Срд', 'Чтв', 'Птн', 'Сбт'];
-const startHour = 6, endHour = 22;
+const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+const startHour = 0, endHour = 24;
+const MINUTES_PER_CELL = 15; // 15 минут на ячейку
+
 function getStartOfWeek(date) {
     const d = new Date(date);
     const day = d.getDay();
     const diff = d.getDate() - day;
     return new Date(d.setDate(diff));
 }
+
 function getWeekDates() {
     const start = getStartOfWeek(new Date());
     start.setDate(start.getDate() + (currentWeekOffset * 7));
@@ -127,50 +235,63 @@ function getWeekDates() {
         return d;
     });
 }
+
 function renderCalendar() {
     calendarGrid.innerHTML = '';
     const weekDates = getWeekDates();
+    
     // Первая строка: пустая ячейка + дни недели с датами
     const timeHeader = document.createElement('div');
     timeHeader.className = 'calendar-cell';
     timeHeader.style.gridRow = '1';
     timeHeader.style.gridColumn = '1';
     calendarGrid.appendChild(timeHeader);
+    
     for (let d = 0; d < 7; d++) {
         const dayHeader = document.createElement('div');
         dayHeader.className = 'calendar-cell';
         dayHeader.style.gridRow = '1';
         dayHeader.style.gridColumn = (d + 2);
-        dayHeader.innerHTML = `<div>${days[d]}</div><div style='font-size:13px;font-weight:normal;'>${weekDates[d].getDate()}.${weekDates[d].getMonth()+1}</div>`;
+        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        dayHeader.innerHTML = `<div>${days[d]}</div><div style='font-size:13px;font-weight:normal;'>${weekDates[d].getDate()} ${monthNames[weekDates[d].getMonth()]}</div>`;
         dayHeader.style.fontWeight = 'bold';
         dayHeader.style.textAlign = 'center';
         calendarGrid.appendChild(dayHeader);
     }
+
     // Вертикальные тайминги и ячейки
     for (let h = startHour; h < endHour; h++) {
-        // Тайминг
-        const timeCell = document.createElement('div');
-        timeCell.className = 'calendar-cell';
-        timeCell.style.gridRow = (h - startHour + 2);
-        timeCell.style.gridColumn = '1';
-        timeCell.style.textAlign = 'right';
-        timeCell.style.fontSize = '13px';
-        timeCell.style.color = '#888';
-        timeCell.style.paddingRight = '6px';
-        timeCell.style.background = 'var(--calendar-bg)';
-        timeCell.textContent = `${h}:00`;
-        calendarGrid.appendChild(timeCell);
-        // Ячейки дней
-        for (let d = 0; d < 7; d++) {
-            const cell = document.createElement('div');
-            cell.className = 'calendar-cell';
-            cell.style.gridRow = (h - startHour + 2);
-            cell.style.gridColumn = (d + 2);
-            cell.ondragover = e => e.preventDefault();
-            cell.ondrop = e => onDropTask(d, h);
-            calendarGrid.appendChild(cell);
+        for (let m = 0; m < 60; m += MINUTES_PER_CELL) {
+            const rowIndex = ((h - startHour) * 4) + (m / MINUTES_PER_CELL) + 2;
+            
+            // Тайминг (только для полных часов)
+            if (m === 0) {
+                const timeCell = document.createElement('div');
+                timeCell.className = 'calendar-cell';
+                timeCell.style.gridRow = `${rowIndex} / span 4`;
+                timeCell.style.gridColumn = '1';
+                timeCell.style.textAlign = 'right';
+                timeCell.style.fontSize = '13px';
+                timeCell.style.color = '#888';
+                timeCell.style.paddingRight = '6px';
+                timeCell.style.background = 'var(--calendar-bg)';
+                timeCell.textContent = `${h.toString().padStart(2, '0')}:00`;
+                calendarGrid.appendChild(timeCell);
+            }
+
+            // Ячейки дней
+            for (let d = 0; d < 7; d++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-cell';
+                cell.style.gridRow = rowIndex;
+                cell.style.gridColumn = (d + 2);
+                cell.ondragover = e => e.preventDefault();
+                cell.ondrop = e => onDropTask(d, h, m);
+                calendarGrid.appendChild(cell);
+            }
         }
     }
+
     // Отрисовка задач на календаре
     calendarTasks.forEach(task => {
         const taskDate = new Date(task.date);
@@ -186,11 +307,15 @@ function renderCalendar() {
             block.className = 'task-block';
             block.textContent = task.text;
             block.style.gridColumn = (dayIndex + 2);
-            block.style.gridRow = (task.hour - startHour + 2) + ' / span ' + (task.duration || 1);
+            
+            const startRow = ((task.hour - startHour) * 4) + (task.minute / MINUTES_PER_CELL) + 2;
+            const durationInCells = Math.max(1, (task.duration || 1) * 4);
+            block.style.gridRow = `${startRow} / span ${durationInCells}`;
+            
             block.onclick = () => editCalendarTask(task.id);
             block.draggable = true;
             block.ondragstart = () => draggedTaskId = task.id;
-            // Добавляю resize-handle
+            
             const resize = document.createElement('div');
             resize.className = 'resize-handle';
             resize.onmousedown = e => startResize(e, task);
@@ -199,6 +324,7 @@ function renderCalendar() {
         }
     });
 }
+
 let resizingTask = null;
 let startY = 0;
 let startDuration = 1;
@@ -214,8 +340,10 @@ function startResize(e, task) {
 function onResize(e) {
     if (!resizingTask) return;
     const delta = e.clientY - startY;
-    let newDuration = Math.max(1, startDuration + Math.round(delta / 40));
-    resizingTask.duration = newDuration;
+    const cellHeight = 40; // Высота ячейки в пикселях
+    const cellsPerHour = 4; // 4 ячейки по 15 минут в часе
+    let newDuration = Math.max(0.25, startDuration + (delta / (cellHeight * cellsPerHour)));
+    resizingTask.duration = Math.round(newDuration * 4) / 4; // Округляем до 15 минут
     localStorage.setItem('calendarTasks', JSON.stringify(calendarTasks));
     renderCalendar();
 }
@@ -225,19 +353,21 @@ function stopResize() {
     document.onmousemove = null;
     document.onmouseup = null;
 }
-function onDropTask(day, hour) {
+function onDropTask(day, hour, minute) {
     if (!draggedTaskId) return;
-    // Если таск из списка задач
+    
     const task = tasks.find(t => t.id == draggedTaskId);
     const alreadyOnCalendar = calendarTasks.some(t => t.id == draggedTaskId);
+    
     if (task && !alreadyOnCalendar) {
         const weekDates = getWeekDates();
         const date = weekDates[day];
         calendarTasks.push({
             id: task.id,
             text: task.text,
-            date: date.toISOString(), // Сохраняем полную дату
+            date: date.toISOString(),
             hour,
+            minute,
             duration: 1
         });
         localStorage.setItem('calendarTasks', JSON.stringify(calendarTasks));
@@ -245,13 +375,14 @@ function onDropTask(day, hour) {
         draggedTaskId = null;
         return;
     }
-    // Если таск уже на календаре (перетаскивание)
+    
     const calTask = calendarTasks.find(t => t.id == draggedTaskId);
     if (calTask) {
         const weekDates = getWeekDates();
         const date = weekDates[day];
         calTask.date = date.toISOString();
         calTask.hour = hour;
+        calTask.minute = minute;
         localStorage.setItem('calendarTasks', JSON.stringify(calendarTasks));
         renderCalendar();
         draggedTaskId = null;
