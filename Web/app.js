@@ -23,6 +23,9 @@ const nextWeekBtn = document.getElementById('next-week-btn');
 const zoomInBtn = document.getElementById('zoom-in');
 const zoomOutBtn = document.getElementById('zoom-out');
 const zoomSlider = document.getElementById('zoom-slider');
+const exportTasksBtn = document.getElementById('export-tasks-btn');
+const importTasksBtn = document.getElementById('import-tasks-btn');
+const importFileInput = document.getElementById('import-file-input');
 
 // --- Инициализация ---
 window.onload = () => {
@@ -33,6 +36,7 @@ window.onload = () => {
     setupWeekNavigation();
     setupZoomControls();
     applyCalendarScale();
+    setupExportImport();
 };
 
 // --- Масштабирование календаря ---
@@ -76,6 +80,50 @@ function applyCalendarScale() {
     container.scrollTop = scrollTop;
     
     localStorage.setItem('calendarScale', calendarScale.toString());
+}
+
+// --- Экспорт/Импорт задач ---
+function setupExportImport() {
+    exportTasksBtn.onclick = exportTasks;
+    importTasksBtn.onclick = () => importFileInput.click();
+    importFileInput.onchange = importTasks;
+}
+
+function exportTasks() {
+    const data = JSON.stringify(calendarTasks, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tasks.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function importTasks(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedTasks = JSON.parse(e.target.result);
+            if (Array.isArray(importedTasks)) {
+                calendarTasks = importedTasks;
+                localStorage.setItem('calendarTasks', JSON.stringify(calendarTasks));
+                renderCalendar();
+                renderTasks();
+            } else {
+                alert('Некорректный формат файла');
+            }
+        } catch (error) {
+            alert('Ошибка при чтении файла');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Сброс input для возможности повторного выбора того же файла
 }
 
 // --- События ---
