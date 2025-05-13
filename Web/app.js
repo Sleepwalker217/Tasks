@@ -1,9 +1,10 @@
- л// --- Переменные состояния ---
+// --- Переменные состояния ---
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 let calendarTasks = JSON.parse(localStorage.getItem('calendarTasks') || '[]');
 let editingTaskId = null;
 let draggedTaskId = null;
 let theme = localStorage.getItem('theme') || 'dark';
+let currentWeekOffset = 0; // Добавляем смещение текущей недели
 
 // --- DOM элементы ---
 const taskList = document.getElementById('task-list');
@@ -16,6 +17,8 @@ const modalTitle = document.getElementById('modal-title');
 const calendarGrid = document.getElementById('calendar-grid');
 const currentDateSpan = document.getElementById('current-date');
 const themeToggle = document.getElementById('theme-toggle');
+const prevWeekBtn = document.getElementById('prev-week-btn');
+const nextWeekBtn = document.getElementById('next-week-btn');
 
 // --- Инициализация ---
 window.onload = () => {
@@ -23,6 +26,7 @@ window.onload = () => {
     renderCalendar();
     updateCurrentDate();
     applyTheme();
+    setupWeekNavigation();
 };
 
 // --- События ---
@@ -31,6 +35,18 @@ saveTaskBtn.onclick = saveTask;
 cancelTaskBtn.onclick = closeModal;
 themeToggle.onclick = toggleTheme;
 taskInput.onkeydown = e => { if (e.key === 'Enter') saveTask(); };
+
+// --- Навигация по неделям ---
+function setupWeekNavigation() {
+    prevWeekBtn.onclick = () => {
+        currentWeekOffset--;
+        renderCalendar();
+    };
+    nextWeekBtn.onclick = () => {
+        currentWeekOffset++;
+        renderCalendar();
+    };
+}
 
 // --- Функции задач ---
 function renderTasks() {
@@ -104,6 +120,7 @@ function getStartOfWeek(date) {
 }
 function getWeekDates() {
     const start = getStartOfWeek(new Date());
+    start.setDate(start.getDate() + (currentWeekOffset * 7));
     return Array.from({length: 7}, (_, i) => {
         const d = new Date(start);
         d.setDate(start.getDate() + i);
@@ -156,20 +173,30 @@ function renderCalendar() {
     }
     // Отрисовка задач на календаре
     calendarTasks.forEach(task => {
-        const block = document.createElement('div');
-        block.className = 'task-block';
-        block.textContent = task.text;
-        block.style.gridColumn = (task.day + 2);
-        block.style.gridRow = (task.hour - startHour + 2) + ' / span ' + (task.duration || 1);
-        block.onclick = () => editCalendarTask(task.id);
-        block.draggable = true;
-        block.ondragstart = () => draggedTaskId = task.id;
-        // Добавляю resize-handle
-        const resize = document.createElement('div');
-        resize.className = 'resize-handle';
-        resize.onmousedown = e => startResize(e, task);
-        block.appendChild(resize);
-        calendarGrid.appendChild(block);
+        const taskDate = new Date(task.date);
+        const weekDates = getWeekDates();
+        const dayIndex = weekDates.findIndex(date => 
+            date.getDate() === taskDate.getDate() && 
+            date.getMonth() === taskDate.getMonth() && 
+            date.getFullYear() === taskDate.getFullYear()
+        );
+        
+        if (dayIndex !== -1) {
+            const block = document.createElement('div');
+            block.className = 'task-block';
+            block.textContent = task.text;
+            block.style.gridColumn = (dayIndex + 2);
+            block.style.gridRow = (task.hour - startHour + 2) + ' / span ' + (task.duration || 1);
+            block.onclick = () => editCalendarTask(task.id);
+            block.draggable = true;
+            block.ondragstart = () => draggedTaskId = task.id;
+            // Добавляю resize-handle
+            const resize = document.createElement('div');
+            resize.className = 'resize-handle';
+            resize.onmousedown = e => startResize(e, task);
+            block.appendChild(resize);
+            calendarGrid.appendChild(block);
+        }
     });
 }
 let resizingTask = null;
@@ -204,10 +231,12 @@ function onDropTask(day, hour) {
     const task = tasks.find(t => t.id == draggedTaskId);
     const alreadyOnCalendar = calendarTasks.some(t => t.id == draggedTaskId);
     if (task && !alreadyOnCalendar) {
+        const weekDates = getWeekDates();
+        const date = weekDates[day];
         calendarTasks.push({
-            id: task.id, // Используем тот же id, что и у задачи
+            id: task.id,
             text: task.text,
-            day,
+            date: date.toISOString(), // Сохраняем полную дату
             hour,
             duration: 1
         });
@@ -219,7 +248,9 @@ function onDropTask(day, hour) {
     // Если таск уже на календаре (перетаскивание)
     const calTask = calendarTasks.find(t => t.id == draggedTaskId);
     if (calTask) {
-        calTask.day = day;
+        const weekDates = getWeekDates();
+        const date = weekDates[day];
+        calTask.date = date.toISOString();
         calTask.hour = hour;
         localStorage.setItem('calendarTasks', JSON.stringify(calendarTasks));
         renderCalendar();
