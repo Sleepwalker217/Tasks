@@ -28,43 +28,99 @@ body {
 #app {
     display: flex;
     height: 100vh;
+    background: var(--sidebar-bg);
 }
 .sidebar {
-    width: 300px;
+    width: 320px;
     background: var(--sidebar-bg);
-    padding: 24px 16px;
+    padding: 32px 24px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
 }
 .sidebar h2 {
-    margin-top: 0;
+    margin: 0 0 24px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--accent);
 }
 #task-list {
     flex: 1;
     list-style: none;
     padding: 0;
-    margin: 0 0 16px 0;
+    margin: 0 0 24px 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+}
+#task-list::-webkit-scrollbar {
+    width: 6px;
+}
+#task-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+#task-list::-webkit-scrollbar-thumb {
+    background-color: var(--accent);
+    border-radius: 3px;
 }
 #task-list li {
     background: var(--task-bg);
-    margin-bottom: 8px;
-    padding: 10px 12px;
-    border-radius: 6px;
+    margin-bottom: 12px;
+    padding: 16px;
+    border-radius: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: grab;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+#task-list li:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--accent);
+}
+#task-list li button {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+#task-list li button:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
 }
 #add-task-btn {
     background: var(--accent);
     color: #fff;
     border: none;
-    padding: 10px 0;
-    border-radius: 6px;
+    padding: 14px 0;
+    border-radius: 12px;
     font-size: 16px;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+#add-task-btn:hover {
+    background: #3367d6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(66, 133, 244, 0.2);
+}
+#add-task-btn::before {
+    content: '+';
+    font-size: 20px;
+    font-weight: bold;
 }
 .calendar-panel {
     flex: 1;
@@ -72,12 +128,16 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
+    border-radius: 12px;
+    margin: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .calendar-header {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px;
+    padding: 16px;
     background: var(--calendar-bg);
     border-bottom: 1px solid var(--border-color);
 }
@@ -92,6 +152,8 @@ body {
     min-height: 700px;
     border-left: 2px solid #333;
     border-top: 2px solid #333;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
 }
 .calendar-cell {
     background: var(--calendar-bg);
@@ -140,11 +202,12 @@ body {
 .modal {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.6);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
+    backdrop-filter: blur(4px);
 }
 .modal.hidden {
     display: none;
@@ -152,16 +215,67 @@ body {
 .modal-content {
     background: var(--modal-bg);
     color: var(--modal-text);
-    padding: 24px 32px;
-    border-radius: 10px;
-    min-width: 320px;
-    box-shadow: 0 4px 32px rgba(0,0,0,0.25);
+    padding: 32px;
+    border-radius: 16px;
+    min-width: 400px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+}
+.modal-content h3 {
+    margin: 0 0 24px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+}
+#task-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 16px;
+    background: var(--bg);
+    color: var(--text);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-sizing: border-box;
+    margin-bottom: 24px;
+}
+#task-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
 }
 .modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    margin-top: 16px;
+    margin-top: 24px;
+}
+.modal-actions button {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+#save-task-btn {
+    background: var(--accent);
+    color: white;
+}
+#save-task-btn:hover {
+    background: #3367d6;
+    transform: translateY(-1px);
+}
+#cancel-task-btn {
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border-color) !important;
+}
+#cancel-task-btn:hover {
+    background: var(--bg);
+    transform: translateY(-1px);
 }
 #prev-week-btn, #next-week-btn {
     background: var(--button-bg);
