@@ -1,0 +1,164 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.3s, color 0.3s;
+}
+:root {
+    --bg: #18191a;
+    --text: #e4e6eb;
+    --sidebar-bg: #242526;
+    --calendar-bg: #1a1a1a;
+    --accent: #4285f4;
+    --task-bg: #23272f;
+    --modal-bg: #222;
+    --modal-text: #fff;
+}
+.light {
+    --bg: #fff;
+    --text: #222;
+    --sidebar-bg: #f5f5f5;
+    --calendar-bg: #fff;
+    --accent: #4285f4;
+    --task-bg: #e3e9f7;
+    --modal-bg: #fff;
+    --modal-text: #222;
+}
+#app {
+    display: flex;
+    height: 100vh;
+}
+.sidebar {
+    width: 300px;
+    background: var(--sidebar-bg);
+    padding: 24px 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+.sidebar h2 {
+    margin-top: 0;
+}
+#task-list {
+    flex: 1;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px 0;
+    overflow-y: auto;
+}
+#task-list li {
+    background: var(--task-bg);
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+}
+#add-task-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 0;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.calendar-panel {
+    flex: 1;
+    background: var(--calendar-bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid #333;
+}
+#calendar-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr);
+    grid-template-rows: 40px repeat(16, 1fr);
+    gap: 1px;
+    background: #222;
+    position: relative;
+    min-height: 700px;
+    border-left: 2px solid #333;
+    border-top: 2px solid #333;
+}
+.calendar-cell {
+    background: var(--calendar-bg);
+    min-height: 40px;
+    border-bottom: 1px solid #333;
+    border-right: 1px solid #333;
+    position: relative;
+    box-sizing: border-box;
+}
+.task-block {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 93%;
+    height: 80%;
+    position: relative;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 6px;
+    padding: 4px 8px 8px 8px;
+    cursor: pointer;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    user-select: none;
+}
+.task-block .resize-handle {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 8px;
+    cursor: ns-resize;
+    background: rgba(255,255,255,0.2);
+    border-radius: 0 0 6px 6px;
+    z-index: 3;
+}
+#current-time-cursor {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e53935;
+    z-index: 3;
+    pointer-events: none;
+}
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+.modal.hidden {
+    display: none;
+}
+.modal-content {
+    background: var(--modal-bg);
+    color: var(--modal-text);
+    padding: 24px 32px;
+    border-radius: 10px;
+    min-width: 320px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.25);
+}
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+} 

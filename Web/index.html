@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Трекер дел за день</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <aside class="sidebar">
+            <h2>Задачи на день</h2>
+            <ul id="task-list"></ul>
+            <button id="add-task-btn">Добавить задачу</button>
+        </aside>
+        <main class="calendar-panel">
+            <header class="calendar-header">
+                <span id="current-date"></span>
+                <button id="theme-toggle">🌙</button>
+            </header>
+            <div id="calendar-grid"></div>
+        </main>
+    </div>
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">Новая задача</h3>
+            <input type="text" id="task-input" placeholder="Описание задачи">
+            <div class="modal-actions">
+                <button id="save-task-btn">Сохранить</button>
+                <button id="cancel-task-btn">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html> 
