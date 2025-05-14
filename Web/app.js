@@ -313,6 +313,7 @@ function renderCalendar() {
             selectedDate = new Date(weekDates[d]);
             renderCalendar();
             renderTasks();
+            updateSidebarTitle();
         };
         
         calendarGrid.appendChild(dayHeader);

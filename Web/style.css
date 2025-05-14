@@ -447,4 +447,52 @@ body {
 
 .calendar-day-header.today.selected {
     border-color: white;
+}
+
+.light #calendar-grid {
+    border-left: 2px solid #e0e0e0;
+    border-top: 2px solid #e0e0e0;
+    background: #f8f8f8;
+}
+.light .calendar-cell {
+    border-bottom: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+    background: var(--calendar-bg);
+}
+.light .calendar-cell.hour-line {
+    border-top: 2px solid #bfc8e6;
+}
+
+#theme-toggle {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, color 0.2s, transform 0.2s;
+    box-shadow: 0 2px 8px rgba(66,133,244,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+}
+#theme-toggle:hover, #theme-toggle:focus {
+    background: #3367d6;
+    color: #fffbe7;
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 4px 16px rgba(66,133,244,0.18);
+}
+.light .calendar-day-header.selected {
+    background: #4285f4;
+    color: #fff;
+    border: 1.5px solid #3367d6;
+    box-shadow: 0 2px 8px rgba(66,133,244,0.10);
+}
+.light .calendar-day-header.selected .calendar-day-date {
+    color: #e3e9f7;
+}
+.light .calendar-day-header.today {
+    border: 2px solid #4285f4;
 } 
