@@ -77,11 +77,19 @@ body {
     cursor: grab;
     transition: all 0.2s ease;
     border: 1px solid transparent;
+    gap: 12px;
+    min-height: 24px;
 }
 #task-list li:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-color: var(--accent);
+}
+#task-list li > span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 #task-list li button {
     background: transparent;
@@ -92,6 +100,7 @@ body {
     padding: 4px 8px;
     border-radius: 6px;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 #task-list li button:hover {
     opacity: 1;
@@ -411,4 +420,31 @@ body {
     font-weight: normal;
     color: #b0b0b0;
     line-height: 1.1;
+}
+.calendar-day-header {
+    cursor: pointer;
+    transition: background-color 0.2s;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.calendar-day-header:hover {
+    background-color: rgba(66, 133, 244, 0.1);
+}
+
+.calendar-day-header.selected {
+    background-color: var(--accent);
+    color: white;
+}
+
+.calendar-day-header.selected .calendar-day-date {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.calendar-day-header.today {
+    border: 2px solid var(--accent);
+}
+
+.calendar-day-header.today.selected {
+    border-color: white;
 } 

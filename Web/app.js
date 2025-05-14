@@ -6,6 +6,7 @@ let draggedTaskId = null;
 let theme = localStorage.getItem('theme') || 'dark';
 let currentWeekOffset = 0; // Добавляем смещение текущей недели
 let calendarScale = parseFloat(localStorage.getItem('calendarScale')) || 1;
+let selectedDate = new Date(); // Добавляем переменную для выбранной даты
 
 // --- DOM элементы ---
 const taskList = document.getElementById('task-list');
@@ -148,7 +149,8 @@ function updateAddButtonVisibility() {
 
 function updateSidebarTitle() {
     const title = document.querySelector('.sidebar h2');
-    title.textContent = 'Задачи на неделю';
+    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    title.textContent = `Задачи на ${selectedDate.getDate()} ${monthNames[selectedDate.getMonth()]}`;
 }
 
 function setupWeekNavigation() {
@@ -158,6 +160,7 @@ function setupWeekNavigation() {
         renderTasks();
         updateSidebarTitle();
         updateAddButtonVisibility();
+        updateCurrentDate();
     };
     nextWeekBtn.onclick = () => {
         currentWeekOffset++;
@@ -165,28 +168,28 @@ function setupWeekNavigation() {
         renderTasks();
         updateSidebarTitle();
         updateAddButtonVisibility();
+        updateCurrentDate();
     };
     updateSidebarTitle();
     updateAddButtonVisibility();
+    updateCurrentDate();
 }
 
 // --- Функции задач ---
 function renderTasks() {
     taskList.innerHTML = '';
-    const weekDates = getWeekDates();
-    const weekStart = weekDates[0];
-    const weekEnd = new Date(weekDates[6]);
-    weekEnd.setHours(23, 59, 59, 999);
-
-    // Фильтруем задачи только для текущей недели
-    const weekTasks = calendarTasks.filter(task => {
+    
+    // Фильтруем задачи только для выбранного дня
+    const dayTasks = calendarTasks.filter(task => {
         const taskDate = new Date(task.date);
-        return taskDate >= weekStart && taskDate <= weekEnd;
+        return taskDate.toDateString() === selectedDate.toDateString();
     });
 
-    weekTasks.forEach((task, idx) => {
+    dayTasks.forEach((task, idx) => {
         const li = document.createElement('li');
-        li.textContent = task.text;
+        const textSpan = document.createElement('span');
+        textSpan.textContent = task.text;
+        li.appendChild(textSpan);
         li.draggable = true;
         li.dataset.id = task.id;
         li.ondragstart = () => draggedTaskId = task.id;
@@ -227,26 +230,16 @@ function saveTask() {
     } else {
         const newTask = { id: Date.now(), text };
         tasks.push(newTask);
-        // Добавляем задачу в calendarTasks с текущей датой
-        const weekDates = getWeekDates();
-        const today = new Date();
-        const currentDay = weekDates.findIndex(date => 
-            date.getDate() === today.getDate() && 
-            date.getMonth() === today.getMonth() && 
-            date.getFullYear() === today.getFullYear()
-        );
-        
-        if (currentDay !== -1) {
-            calendarTasks.push({
-                id: newTask.id,
-                text: newTask.text,
-                date: today.toISOString(),
-                hour: new Date().getHours(),
-                duration: 1
-            });
-            localStorage.setItem('calendarTasks', JSON.stringify(calendarTasks));
-            renderCalendar();
-        }
+        // Добавляем задачу в calendarTasks с выбранной датой
+        calendarTasks.push({
+            id: newTask.id,
+            text: newTask.text,
+            date: selectedDate.toISOString(),
+            hour: new Date().getHours(),
+            duration: 1
+        });
+        localStorage.setItem('calendarTasks', JSON.stringify(calendarTasks));
+        renderCalendar();
     }
     localStorage.setItem('tasks', JSON.stringify(tasks));
     renderTasks();
@@ -287,6 +280,7 @@ function getWeekDates() {
 function renderCalendar() {
     calendarGrid.innerHTML = '';
     const weekDates = getWeekDates();
+    const today = new Date();
     
     // Первая строка: пустая ячейка + дни недели с датами
     const timeHeader = document.createElement('div');
@@ -297,13 +291,30 @@ function renderCalendar() {
     
     for (let d = 0; d < 7; d++) {
         const dayHeader = document.createElement('div');
-        dayHeader.className = 'calendar-cell';
+        dayHeader.className = 'calendar-cell calendar-day-header';
         dayHeader.style.gridRow = '1';
         dayHeader.style.gridColumn = (d + 2);
+        
         const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
         dayHeader.innerHTML = `<div class='calendar-day-title'>${days[d]}</div><div class='calendar-day-date'>${weekDates[d].getDate()} ${monthNames[weekDates[d].getMonth()]}</div>`;
-        dayHeader.style.fontWeight = 'bold';
-        dayHeader.style.textAlign = 'center';
+        
+        // Добавляем класс today для текущего дня
+        if (weekDates[d].toDateString() === today.toDateString()) {
+            dayHeader.classList.add('today');
+        }
+        
+        // Добавляем класс selected для выбранного дня
+        if (weekDates[d].toDateString() === selectedDate.toDateString()) {
+            dayHeader.classList.add('selected');
+        }
+        
+        // Добавляем обработчик клика
+        dayHeader.onclick = () => {
+            selectedDate = new Date(weekDates[d]);
+            renderCalendar();
+            renderTasks();
+        };
+        
         calendarGrid.appendChild(dayHeader);
     }
 
@@ -436,7 +447,15 @@ function onDropTask(day, hour, minute) {
         calTask.hour = hour;
         calTask.minute = minute;
         localStorage.setItem('calendarTasks', JSON.stringify(calendarTasks));
+        
+        // Обновляем выбранную дату на дату, куда перенесли задачу
+        selectedDate = new Date(date);
+        
+        // Обновляем календарь и список задач
         renderCalendar();
+        renderTasks();
+        updateSidebarTitle();
+        
         draggedTaskId = null;
     }
 }
@@ -461,9 +480,12 @@ function editCalendarTask(id) {
 
 // --- Текущая дата и курсор времени ---
 function updateCurrentDate() {
-    const now = new Date();
-    currentDateSpan.textContent = now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    setTimeout(updateCurrentDate, 60000);
+    const weekDates = getWeekDates();
+    const start = weekDates[0];
+    const end = weekDates[6];
+    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    let text = `${start.getDate()} ${monthNames[start.getMonth()]} – ${end.getDate()} ${monthNames[end.getMonth()]}`;
+    currentDateSpan.textContent = text;
 }
 
 // --- Тема ---
